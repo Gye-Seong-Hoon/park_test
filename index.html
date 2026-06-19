@@ -6,12 +6,12 @@
     <title>파크골프 4인 스코어 매니저</title>
     <style>
         :root {
-            --primary-color: #1b5e20; /* 야외에서 더 선명한 진한 녹색 */
+            --primary-color: #1b5e20;
             --secondary-color: #0d47a1;
             --danger-color: #b71c1c;
             --bg-color: #f1f3f5;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
         body { background-color: var(--bg-color); padding: 8px; color: #111; }
         
         header { text-align: center; margin: 8px 0; }
@@ -38,7 +38,6 @@
         
         td b { font-size: 1.1rem; font-weight: 900; }
 
-        /* 야외 시인성을 위해 크기 확대 및 글씨 굵기 초강화 */
         .score-input { width: 96%; height: 52px; font-size: 1.6rem; font-weight: 900; text-align: center; border: 2px solid #868e96; border-radius: 6px; background-color: #f8f9fa; color: #000; -webkit-appearance: none; margin: 0 auto; display: block; }
         .score-input.changed { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
         .score-input:focus { background-color: #d1ecf1; border-color: var(--secondary-color); outline: none; color: #0c5460; }
@@ -110,7 +109,85 @@
         <button class="action-btn btn-reset" onclick="resetScores(true)">초기화</button>
     </div>
 
-    <script src="script.js"></script>
-</body>
-</html>
+    <script>
+        // 대괄호 소실 오류를 원천 타파하기 위해 콤마 단위 문자열을 변환하여 배열을 생성합니다.
+        var strA = "3,4,4,3,4,3,3,5,4";
+        var strB = "4,4,5,3,3,4,3,3,4";
+        var parsA = strA.split(",").map(Number);
+        var parsB = strB.split(",").map(Number);
+
+        var defaultCourses = {
+            "송도A": { name: "송도파크골프장 A코스", pars: parsA },
+            "송도B": { name: "송도파크골프장 B코스", pars: parsB }
+        };
+        var courseData = {};
+        
+        // 4인용 9홀 빈 스코어 판 초기화 구조 변경
+        var playersScores = [
+            [1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1]
+        ];
+        var cumulativeHistory = [];
+
+        window.onload = function() {
+            // 구형 기기 및 꼬인 로컬 데이터 완전 강제 리셋 후 초기 세팅
+            localStorage.removeItem("pg_courses");
+            courseData = Object.assign({}, defaultCourses);
+            localStorage.setItem("pg_courses", JSON.stringify(courseData));
+            
+            loadSettings(); 
+            initTable();
+            updateNameUI();
+            checkTemporaryStorage(); 
+        };
+
+        function loadSettings() {
+            for (var i = 0; i < 4; i++) {
+                var savedName = localStorage.getItem("pg_name_" + i);
+                if (savedName) document.getElementById("pName-" + i).value = savedName;
+            }
+            refreshCourseDropdown();
+        }
+
+        function saveSettings() {
+            for (var i = 0; i < 4; i++) {
+                var nameVal = document.getElementById("pName-" + i).value.trim() || ("플레이어" + (i+1));
+                localStorage.setItem("pg_name_" + i, nameVal);
+            }
+            updateNameUI();
+            autoSaveCurrentState();
+        }
+
+        function updateNameUI() {
+            for (var i = 0; i < 4; i++) {
+                var name = document.getElementById("pName-" + i).value.trim() || ("플레이어" + (i+1));
+                document.getElementById("th-name-" + i).innerText = name;
+                document.getElementById("tot-name-" + i).innerText = name;
+            }
+        }
+
+        function refreshCourseDropdown() {
+            var select = document.getElementById("courseSelect");
+            select.innerHTML = '<option value="" disabled selected>코스를 선택하세요</option>';
+            Object.keys(courseData).forEach(function(key) {
+                var opt = document.createElement("option");
+                opt.value = key;
+                opt.innerText = courseData[key].name;
+                select.appendChild(opt);
+            });
+        }
+
+        function addNewCourse() {
+            var courseName = prompt("추가할 골프장 코스 이름을 입력하세요:");
+            if (!courseName || !courseName.trim()) return;
+            
+            var pars = [];
+            for (var i = 1; i <= 9; i++) {
+                var parInput = prompt(i + "번 홀 기준 타수(Par) 입력 (3~5 숫자만):", "4");
+                if (parInput === null) return;
+                var parNum = parseInt(parInput, 10);
+                if (isNaN(parNum) || parNum < 3 || parNum > 5) {
+
 
